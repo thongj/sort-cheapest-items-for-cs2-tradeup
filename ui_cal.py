@@ -38,7 +38,7 @@ def filter_wrong_price_item(list_items):
     for item in cleaned_list:
         if item['float'] > 0.45:
             if item['price'] <= ww_min_price:
-                ilter_list_items.append(item)
+                filter_list_items.append(item)
         elif item['float'] > 0.38 :
             if item['price'] <= ft_min_price:
                 filter_list_items.append(item)
