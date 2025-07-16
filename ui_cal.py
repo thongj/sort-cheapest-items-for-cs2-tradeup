@@ -1,8 +1,11 @@
+import tkinter as tk
+from tkinter import ttk
 from bs4 import BeautifulSoup
 import itertools
 import math
 import time
-
+import os
+import keyboard
 
 def filter_wrong_price_item(list_items):
     cleaned_list = [
@@ -51,9 +54,15 @@ def filter_wrong_price_item(list_items):
     return filter_list_items
 
 
-def read_data(path):
-    with open(path, "r", encoding="utf-8") as file:
-        html_content = file.read()
+    
+
+
+def read_data(input_data):
+    if os.path.isfile(input_data):
+        with open(input_data, "r", encoding="utf-8") as file:
+            html_content = file.read()
+    else:
+        html_content = input_data
     soup = BeautifulSoup(html_content, "html.parser")
     results = []
     
@@ -83,9 +92,6 @@ def read_data(path):
 def find_best_combination_v2(float_list, f_min, f_max, input_item_list, max_output_float, item_look_for):
     sum_items = ((max_output_float - f_min)*10)/(f_max - f_min)
     
-    
-    
-
     #Làm sạch dữ liệu (chuyển sang số thực)
     cleaned_list = [
         {"price": float(item["price"]), "float": float(item["float"])}
@@ -121,6 +127,7 @@ def find_best_combination_v2(float_list, f_min, f_max, input_item_list, max_outp
         else:
             #print(f"Calculate C({len(cleaned_list)},{lookfor_item_count})")
             for combo in itertools.combinations(cleaned_list, item_look_for):
+
                 float_sum =  sum(aver_item_list) + sum(item['float'] for item in combo)
                 if float_sum <= sum_items:       
                     if sum(item['price'] for item in combo) < min_price:
@@ -199,19 +206,58 @@ def find_best_combination_under_output(float_list, f_min, f_max, input_item_list
     return  min_total_price, best_combo
 # ====================================================================================================
 
-if __name__ == "__main__":
-
-    
 
 
-    input_item_list = [0.07348132878542]
-    input_item_list_price = [0]
-    max_output_float = 0.07
+def calculate_average():
+    float_vals = []
+    price_vals = []
+
+    for entry in float_entries:
+        val = entry.get()
+        if val:
+            try:
+                float_vals.append(float(val))
+            except ValueError:
+                result_text.delete(1.0, tk.END)
+                result_text.insert(tk.END, f"Lỗi: Float không hợp lệ -> {val}\n")
+                return
+
+    for entry in price_entries:
+        val = entry.get()
+        if val:
+            try:
+                price_vals.append(float(val))
+            except ValueError:
+                result_text.delete(1.0, tk.END)
+                result_text.insert(tk.END, f"Lỗi: Price không hợp lệ -> {val}\n")
+                return
+
+    #avg_float = sum(float_vals) / len(float_vals) if float_vals else 0
+    #avg_price = sum(price_vals) / len(price_vals) if price_vals else 0
+
+    min_val = float(min_val_var.get())
+    max_val = float(max_val_var.get())
+    max_output_val = float(max_output_entry.get())
+    items_input_data = data_text.get()
+
+    # In kết quả ra khung Text
+    result_text.delete(1.0, tk.END)
+    #result_text.insert(tk.END, f"Số lượng float nhập: {len(float_vals)}\n")
+
+
+
+    ########################################################################
+
+    input_item_list = float_vals #[0.07348132878542]
+    input_item_list_price = price_vals #[0]
+    max_output_float = max_output_val  #0.07
+    f_min = min_val
+    f_max = max_val
     #f_min = 0
-    f_min = 0.06
-    f_max = 0.8
+    #f_min = 0.06
+    #f_max = 0.8
     #f_max = 0.9
-    f_max = 1
+    #f_max = 1
 
     average_input_item_float = sum(item for item in input_item_list) / len(input_item_list) if input_item_list else 0
     sum_items = ((max_output_float - f_min)*10)/(f_max - f_min)
@@ -221,11 +267,12 @@ if __name__ == "__main__":
         
     
     
-    float_list = read_data('./data')
+    float_list = read_data(items_input_data)
     #float_list = read_data('data.html')
     #for item in float_list:
     #    print(item)
     print("--->", float_list[0])
+    
        
     
     float_list1 =[
@@ -259,7 +306,7 @@ if __name__ == "__main__":
     
     print("After filter: ",len(final_items)," items")
 
-    for t in range(1,10):
+    for t in range(1,10 - len(input_item_list)):
         start_time = time.time()
         #best_price, best_combo  = find_best_combination_under_output(filtered_items, f_min, f_max, input_item_list, max_output_float)
         best_price, best_combo  = find_best_combination_v2(filtered_items, f_min, f_max, input_item_list, max_output_float, t)
@@ -271,11 +318,17 @@ if __name__ == "__main__":
             print("✅ Best found with total price:", round(best_price+sum(i for i in input_item_list_price), 2))
             print("Resulting output_val:", round((((sum(i for i in input_item_list) + sum(i["float"] for i in best_combo)) * (f_max - f_min)) / 10) + f_min,12))
             
-            
+            #result_text.insert(tk.END, f"finding combo for {t}\n")
+            #result_text.insert(tk.END, f"✅ Best found with total price: , {round(best_price+sum(i for i in input_item_list_price), 2)}\n")
+            #result_text.insert(tk.END, f"Resulting output_val:, {round((((sum(i for i in input_item_list) + sum(i['float'] for i in best_combo)) * (f_max - f_min)) / 10) + f_min,12)}\n")
+
+
             for item in best_combo:
                 print(item)
+                #result_text.insert(tk.END, f"{item}\n")
         else:
             print("❌ Không tìm được tổ hợp phù hợp.")
+            #result_text.insert(tk.END, f"❌ Không tìm được tổ hợp phù hợp.\n")
         
         
         end_time = time.time()
@@ -284,3 +337,61 @@ if __name__ == "__main__":
         execution_time = end_time - start_time
         print(f"Thời gian chạy: {execution_time:.4f} giây")
         print()
+        #result_text.insert(tk.END, f"Thời gian chạy: {execution_time:.4f} giây\n")
+        #result_text.insert(tk.END, f"\n")
+
+# ==== UI Setup ====
+root = tk.Tk()
+root.title("Tính trung bình Float & Price")
+root.geometry("1200x800")
+
+# ===== Float entries =====
+tk.Label(root, text="Float Values:").grid(row=0, column=0, sticky="w", padx=5)
+float_entries = []
+for i in range(10):
+    entry = tk.Entry(root, width=10)
+    entry.grid(row=0, column=i+1, padx=3)
+    float_entries.append(entry)
+
+# ===== Price entries =====
+tk.Label(root, text="Price Values:").grid(row=1, column=0, sticky="w", padx=5)
+price_entries = []
+for i in range(10):
+    entry = tk.Entry(root, width=10)
+    entry.grid(row=1, column=i+1, padx=3)
+    price_entries.append(entry)
+
+# ===== Min val =====
+tk.Label(root, text="Min Float Value:").grid(row=2, column=0, sticky="w", pady=10, padx=5)
+min_val_var = tk.StringVar(value="0.06")
+for i, val in enumerate(["0", "0.02", "0.06"]):
+    tk.Radiobutton(root, text=val, variable=min_val_var, value=val).grid(row=2, column=i+1, sticky="w")
+
+# ===== Max val =====
+tk.Label(root, text="Max Float Value:").grid(row=3, column=0, sticky="w", pady=10, padx=5)
+max_val_var = tk.StringVar(value="0.8")
+for i, val in enumerate(["0.8", "0.9", "1"]):
+    tk.Radiobutton(root, text=val, variable=max_val_var, value=val).grid(row=3, column=i+1, sticky="w")
+
+# ===== Max output val entry =====
+tk.Label(root, text="Max Output Value:").grid(row=4, column=0, sticky="w", pady=10, padx=5)
+max_output_entry = tk.StringVar(value="0.07")
+for i, val in enumerate(["0.07", "0.15", "0.38"]):
+    tk.Radiobutton(root, text=val, variable=max_output_entry, value=val).grid(row=4, column=i+1, sticky="w")
+
+# ===== Button =====
+calc_button = tk.Button(root, text="Calculate", command=calculate_average)
+calc_button.grid(row=5, column=0, columnspan=5, pady=10)
+
+
+# ===== Kết quả Text box =====
+result_text = tk.Text(root, height= 5, width=100)
+result_text.grid(row=6, column=0, columnspan=12, padx=10, pady=10, sticky="w")
+
+# ===== data box =====
+tk.Label(root, text="path or html data:").grid(row=7, column=0, sticky="w", padx=5)
+data_text = tk.Entry(root, width=100)
+data_text.grid(row=8, column=0, columnspan=12, padx=10, pady=10, sticky="w")
+
+
+root.mainloop()
